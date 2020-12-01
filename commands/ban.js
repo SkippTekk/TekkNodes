@@ -1,0 +1,43 @@
+const Discord = require('discord.js');
+
+module.exports = {
+    name: "ban",
+    description: "Bans a member from the server",
+
+    async run (client, message, args) {
+        if(message.deletable) message.delete();
+        if(!message.member.hasPermission("BAN_MEMBERS")) return;
+        if(!message.guild.me.hasPermission("BAN_MEMBERS")) return message.channel.send('I don\'t have the right permissions.').then(m => m.delete({timeout: 5000}))
+
+        const member = message.mentions.members.first() || message.guild.members.cache.get(args[0]);
+
+        if(!args[0]) return message.channel.send('Please specify a user').then(m => m.delete({timeout: 5000}));
+
+        if(!member) return message.channel.send('Can\'t seem to find this user. Sorry \'bout that :/').then(m => m.delete({timeout: 5000}));
+        if(!member.kickable) return message.channel.send('This user can\'t be banned. It is either because they are a mod/admin, or their highest role is higher than mine').then(m => m.delete({timeout: 5000}));
+
+        if(member.id === message.author.id) return message.channel.send('Bruh, you can\'t kick yourself!').then(m => m.delete({timeout: 5000}));
+
+        let reason = args.slice(1).join(" ");
+
+        if(reason === undefined) reason = 'Unspecified';
+
+        member.kick(reason)
+        .catch(err => {
+            if(err) return message.channel.send('Something went wrong')
+        })
+
+        const kickembed = new Discord.MessageEmbed()
+        .setTitle('Member Banned')
+        .setThumbnail(member.user.displayAvatarURL())
+        .addField('User banned', member)
+        .addField('Banned by', message.author)
+        .addField('Reason', reason)
+        .setFooter('Time banned', client.user.displayAvatarURL())
+        .setTimestamp()
+
+        message.channel.send(kickembed);
+
+
+    }
+}
